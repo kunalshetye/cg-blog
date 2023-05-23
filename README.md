@@ -7,6 +7,14 @@ When testing the application locally ensure that you update .env file with a val
 [![name](public/vercel.gif)](public/vercel.gif)
 
 
+## Setting Up Preview for Content Graph
+| Variable                        |Description| Value |
+|---------------------------------|-----------|-------|
+| NEXT_PUBLIC_CG_APP_KEY          | App Key from ContentGraph|   |
+| NEXT_PUBLIC_CG_SECRET           | App Secret from ContentGraph|   |
+| NEXT_PUBLIC_CG_PREVIEW_MODE     | Toggles fetching Draft Content| true/false , default is false |
+
+
 ## Getting Started
 
 First, run the development server:

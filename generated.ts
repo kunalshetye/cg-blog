@@ -1,28 +1,10 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
+import { fetchData } from './previewFetcher';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
 export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
-
-function fetcher<TData, TVariables>(query: string, variables?: TVariables) {
-  return async (): Promise<TData> => {
-    const res = await fetch("https://cg.optimizely.com/content/v2?auth=NKFCejH1h4JaObFx2XKWBORZVu5ztEOmSPXqGHNXHs4lbG5B", {
-    method: "POST",
-      body: JSON.stringify({ query, variables }),
-    });
-
-    const json = await res.json();
-
-    if (json.errors) {
-      const { message } = json.errors[0];
-
-      throw new Error(message);
-    }
-
-    return json.data;
-  }
-}
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
   ID: string;
@@ -67930,22 +67912,22 @@ export type YouTubeBlockWhereInput = {
   _or?: InputMaybe<Array<InputMaybe<YouTubeBlockWhereInput>>>;
 };
 
-export type LandingPageFragment = { __typename?: 'LandingPage', Name?: string | null };
-
 export type BlogListQueryVariables = Exact<{
   locale?: InputMaybe<Array<InputMaybe<Locales>> | InputMaybe<Locales>>;
+  draft?: InputMaybe<Scalars['Boolean']>;
 }>;
 
 
-export type BlogListQuery = { __typename?: 'Query', LocationItemPage?: { __typename?: 'LocationItemPageOutput', items?: Array<{ __typename?: 'LocationItemPage', Name?: string | null, RelativePath?: string | null, StartPublish?: any | null, MainIntro?: string | null, Image?: { __typename?: 'ContentModelReference', Url?: string | null } | null, PageImage?: { __typename?: 'ContentModelReference', Url?: string | null } | null } | null> | null } | null };
+export type BlogListQuery = { __typename?: 'Query', LocationItemPage?: { __typename?: 'LocationItemPageOutput', items?: Array<{ __typename?: 'LocationItemPage', Name?: string | null, RelativePath?: string | null, StartPublish?: any | null, Status?: string | null, Saved?: any | null, MainIntro?: string | null, Image?: { __typename?: 'ContentModelReference', Url?: string | null } | null, PageImage?: { __typename?: 'ContentModelReference', Url?: string | null } | null, ContentLink?: { __typename?: 'ContentModelReference', Id?: number | null, WorkId?: number | null, GuidValue?: string | null, ProviderName?: string | null, Url?: string | null } | null } | null> | null } | null };
 
 export type BlogPostQueryVariables = Exact<{
   locale?: InputMaybe<Array<InputMaybe<Locales>> | InputMaybe<Locales>>;
-  url?: InputMaybe<Scalars['String']>;
+  id?: InputMaybe<Scalars['Int']>;
+  workId?: InputMaybe<Scalars['Int']>;
 }>;
 
 
-export type BlogPostQuery = { __typename?: 'Query', LocationItemPage?: { __typename?: 'LocationItemPageOutput', items?: Array<{ __typename?: 'LocationItemPage', Name?: string | null, Url?: string | null, StartPublish?: any | null, MainIntro?: string | null, MainBody?: string | null, Image?: { __typename?: 'ContentModelReference', Url?: string | null } | null, PageImage?: { __typename?: 'ContentModelReference', Url?: string | null } | null } | null> | null } | null };
+export type BlogPostQuery = { __typename?: 'Query', LocationItemPage?: { __typename?: 'LocationItemPageOutput', items?: Array<{ __typename?: 'LocationItemPage', Name?: string | null, Url?: string | null, StartPublish?: any | null, MainIntro?: string | null, MainBody?: string | null, Image?: { __typename?: 'ContentModelReference', Url?: string | null } | null, PageImage?: { __typename?: 'ContentModelReference', Url?: string | null } | null, ContentLink?: { __typename?: 'ContentModelReference', Id?: number | null, WorkId?: number | null, GuidValue?: string | null, ProviderName?: string | null, Url?: string | null } | null } | null> | null } | null };
 
 export type GetContentQueryVariables = Exact<{
   url?: InputMaybe<Scalars['String']>;
@@ -67962,23 +67944,33 @@ export type SearchBlogsQueryVariables = Exact<{
 
 export type SearchBlogsQuery = { __typename?: 'Query', LocationItemPage?: { __typename?: 'LocationItemPageOutput', items?: Array<{ __typename?: 'LocationItemPage', RelativePath?: string | null, Name?: string | null, MainIntro?: string | null, StartPublish?: any | null, Image?: { __typename?: 'ContentModelReference', Url?: string | null } | null, PageImage?: { __typename?: 'ContentModelReference', Url?: string | null } | null } | null> | null } | null };
 
-export const LandingPageFragmentDoc = `
-    fragment LandingPage on LandingPage {
-  Name
-}
-    `;
+
 export const BlogListDocument = `
-    query BlogList($locale: [Locales] = en) {
-  LocationItemPage(locale: $locale, limit: 50, orderBy: {Name: ASC}) {
+    query BlogList($locale: [Locales] = en, $draft: Boolean = true) {
+  LocationItemPage(
+    locale: $locale
+    limit: 50
+    orderBy: {Name: ASC, Saved: DESC}
+    where: {IsCommonDraft: {eq: $draft}}
+  ) {
     items {
       Name
       RelativePath
       StartPublish
+      Status
+      Saved
       MainIntro
       Image {
         Url
       }
       PageImage {
+        Url
+      }
+      ContentLink {
+        Id
+        WorkId
+        GuidValue
+        ProviderName
         Url
       }
     }
@@ -67994,12 +67986,15 @@ export const useBlogListQuery = <
     ) =>
     useQuery<BlogListQuery, TError, TData>(
       variables === undefined ? ['BlogList'] : ['BlogList', variables],
-      fetcher<BlogListQuery, BlogListQueryVariables>(BlogListDocument, variables),
+      fetchData<BlogListQuery, BlogListQueryVariables>(BlogListDocument, variables),
       options
     );
 export const BlogPostDocument = `
-    query BlogPost($locale: [Locales] = en, $url: String) {
-  LocationItemPage(locale: $locale, where: {RelativePath: {eq: $url}}) {
+    query BlogPost($locale: [Locales] = en, $id: Int, $workId: Int) {
+  LocationItemPage(
+    locale: $locale
+    where: {ContentLink: {Id: {eq: $id}, WorkId: {eq: $workId}}}
+  ) {
     items {
       Name
       Url
@@ -68010,6 +68005,13 @@ export const BlogPostDocument = `
         Url
       }
       PageImage {
+        Url
+      }
+      ContentLink {
+        Id
+        WorkId
+        GuidValue
+        ProviderName
         Url
       }
     }
@@ -68025,7 +68027,7 @@ export const useBlogPostQuery = <
     ) =>
     useQuery<BlogPostQuery, TError, TData>(
       variables === undefined ? ['BlogPost'] : ['BlogPost', variables],
-      fetcher<BlogPostQuery, BlogPostQueryVariables>(BlogPostDocument, variables),
+      fetchData<BlogPostQuery, BlogPostQueryVariables>(BlogPostDocument, variables),
       options
     );
 export const GetContentDocument = `
@@ -68046,7 +68048,7 @@ export const useGetContentQuery = <
     ) =>
     useQuery<GetContentQuery, TError, TData>(
       variables === undefined ? ['GetContent'] : ['GetContent', variables],
-      fetcher<GetContentQuery, GetContentQueryVariables>(GetContentDocument, variables),
+      fetchData<GetContentQuery, GetContentQueryVariables>(GetContentDocument, variables),
       options
     );
 export const SearchBlogsDocument = `
@@ -68080,6 +68082,6 @@ export const useSearchBlogsQuery = <
     ) =>
     useQuery<SearchBlogsQuery, TError, TData>(
       variables === undefined ? ['SearchBlogs'] : ['SearchBlogs', variables],
-      fetcher<SearchBlogsQuery, SearchBlogsQueryVariables>(SearchBlogsDocument, variables),
+      fetchData<SearchBlogsQuery, SearchBlogsQueryVariables>(SearchBlogsDocument, variables),
       options
     );

@@ -1,18 +1,27 @@
-query BlogPost($locale: [Locales] = en, $url:String){
+query BlogPost($locale: [Locales] = en, $id:Int, $workId: Int){
   LocationItemPage(locale: $locale, where:{
-    RelativePath: { eq: $url}
+    ContentLink: {
+      Id: {eq: $id}, WorkId:{ eq: $workId}
+    }
   })
   {
     items{
       Name,
       Url,
-      StartPublish
+      StartPublish,
       MainIntro,
       MainBody,
       Image {
         Url
       },
       PageImage {
+        Url
+      },
+      ContentLink {
+        Id
+        WorkId
+        GuidValue
+        ProviderName
         Url
       }
     }

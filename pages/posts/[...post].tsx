@@ -9,8 +9,10 @@ const inter = Inter({subsets: ["latin"]});
 export default function Post() {
     const router = useRouter();
     const slug = (router.query.post as string[]) || [];
-    const url = "/" + slug.join('/');
-    const data = useBlogPostQuery({url: url}).data;
+    const id = parseInt(slug[0] || "0");
+    const workId = parseInt(slug[1] || "0");
+    console.log(`id: ${id}, workId: ${workId}`);
+    const data = useBlogPostQuery({workId: workId, id: id}).data;
     const item = data?.LocationItemPage?.items[0];
     let image = item?.PageImage == undefined ? item?.Image?.Url : item?.PageImage?.Url;
     image = image == null ? `https://source.unsplash.com/random?city,landscape,${item?.Name.replace(' ','')}` : image;

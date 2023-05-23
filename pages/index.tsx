@@ -1,17 +1,25 @@
-import Header from "@/components/react/Header";
-import {Inter} from "next/font/google";
-import Head from "next/head";
-import {useBlogListQuery} from "@/generated";
-import Nav from "@/components/react/Nav";
 import BlogPostSummary from "@/components/cms/blocks/BlogPostSummary";
 import BlogPostSummaryLead from "@/components/cms/blocks/BlogPostSummaryLead";
-import chance from 'chance';
+import Header from "@/components/react/Header";
+import {LocationItemPage, useBlogListQuery} from "@/generated";
+import { Inter } from "next/font/google";
+import Head from "next/head";
 
 const inter = Inter({subsets: ["latin"]});
 export default function Home() {
-    const data = useBlogListQuery().data;
+    const data = useBlogListQuery({draft: true}).data;
     const items = data?.LocationItemPage?.items;
-    let firstItem = items == null ? null : items[0];
+    let filteredItems: LocationItemPage[] = [];
+    if(items != null){
+        items.map((content) => {
+            let existingItem = filteredItems
+                .filter((item, index) => item.ContentLink.Id == content.ContentLink.Id);
+            if (existingItem.length == 0)
+                filteredItems.push(content);
+            else if (existingItem[0].Saved < content.Saved)
+                existingItem[0] = content;
+        });
+    }
     return (
         <>
             <Head>
@@ -24,8 +32,8 @@ export default function Home() {
             <div className="container px-4 md:px-0 max-w-6xl mx-auto -mt-32">
                 <div className="mx-0 sm:mx-6">
                     {/*<Nav/>*/}
-                    {data?.LocationItemPage?.items &&
-                        data.LocationItemPage?.items
+                    {filteredItems &&
+                        filteredItems
                             .filter((item,index) => index == 0)
                             .map((content) => {
                         return (
@@ -33,8 +41,8 @@ export default function Home() {
                         );
                     })}
                     <div className="flex flex-wrap justify-between pt-12 -mx-6">
-                        {data?.LocationItemPage?.items &&
-                            data.LocationItemPage?.items
+                        {filteredItems &&
+                            filteredItems
                                 .filter((item,index) => index != 0)
                                 .map((content) => {
                             // @ts-ignore

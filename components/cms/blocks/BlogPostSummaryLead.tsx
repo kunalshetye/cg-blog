@@ -8,7 +8,7 @@ export default function BlogPostSummaryLead({blogItem} : Content){
     image = image == null ? `https://source.unsplash.com/random?city,landscape,${blogItem.Name.replace(' ','')}` : image;
     return(
             <div className="flex h-full bg-white rounded overflow-hidden shadow-lg">
-                <Link href={blogItem.RelativePath} className="flex flex-wrap no-underline hover:no-underline">
+                <Link href={`/posts/${blogItem.ContentLink.Id}/${blogItem.ContentLink.WorkId}`} className="flex flex-wrap no-underline hover:no-underline">
                     <div className="w-full md:w-2/3 rounded-t">
                         <img src={image}
                              className="h-full w-full shadow" />
