@@ -18,7 +18,6 @@ export const fetchData = <TData, TVariables>(
         });
 
         if(isPreviewMode){
-            console.log(options);
             if(options === undefined) options = {};
             options["Authorization"] = generateHMACKey(
                 process.env.NEXT_PUBLIC_CG_APP_KEY,
